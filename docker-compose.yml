@@ -1,0 +1,46 @@
+version: '3.8'
+services:
+
+  mysql_db:
+    image: mysql:8.0 # Use a imagem oficial do MySQL
+    container_name: localiza-mysql-db
+    restart: always
+    environment:
+      # Credenciais necessárias para a inicialização do MySQL
+      MYSQL_ROOT_PASSWORD: root 
+      MYSQL_DATABASE: localiza           # Nome do banco de dados que seu Spring usará
+      MYSQL_USER: root             # Usuário que o Spring usará
+      MYSQL_PASSWORD: root    # Senha que o Spring usará
+    ports:
+      - "3306:3306" # Mapeia a porta 3306 do container para a sua máquina (acesso externo)
+    volumes:
+      # Cria um volume para persistir os dados (eles não serão perdidos ao parar o container)
+      - mysql_data:/var/lib/mysql 
+      # Opcional: Para executar scripts de inicialização, se você tiver
+      # - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # ===============================================
+  # 2. SEU BACKEND (Spring Boot)
+  # ===============================================
+  backend:
+    build: . # Usa o Dockerfile que você já criou nesta pasta
+    ports:
+      - "8080:8080"
+    environment:
+      # CRUCIAL: O Spring deve se conectar ao host 'mysql_db' (o nome do serviço)
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql_db:3306/localiza_db?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    depends_on:
+      - mysql_db # Garante que o MySQL inicie antes do Spring Boot
+    
+  # ===============================================
+  # 3. SEU FRONTEND (Angular - EXEMPLO)
+  # ===============================================
+  # (Você precisaria de um Dockerfile para o frontend aqui)
+  # frontend:
+  #   ...
+  
+# Define o volume para persistência de dados
+volumes:
+  mysql_data:
