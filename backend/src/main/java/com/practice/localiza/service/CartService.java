@@ -6,6 +6,7 @@ import com.practice.localiza.exception.ResourceNotFoundException;
 import com.practice.localiza.repository.CarRepository;
 import com.practice.localiza.repository.CartItemRepository;
 import com.practice.localiza.repository.CartRepository;
+import jakarta.persistence.PersistenceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
@@ -43,35 +44,48 @@ public class CartService {
 
     @Transactional
     public CartItem addToCart(User user, CartItemRequestDTO request) {
-        Cart cart = getCart(user);
+        int attempts = 0;
+        while (attempts < 3) {
+            try {
+                Cart cart = getCart(user);
+                Car carToAdd = carRepository.findById(request.getCarId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Car", request.getCarId()));
+                List<Acessory> chosenAccessories = acessoryRepository.findAllById(request.getAccessoryIds());
+                double finalPrice = calculatePrice(carToAdd, chosenAccessories);
+                CartItem cartItem = new CartItem();
+                cartItem.setCart(cart);
+                cartItem.setCar(carToAdd);
+                cartItem.setChosenAccessories(chosenAccessories);
+                cartItem.setCalculatedPrice(finalPrice);
 
-        Car carToAdd = carRepository.findById(request.getCarId())
-                .orElseThrow(() -> new ResourceNotFoundException("Car", request.getCarId()));
+                cartItemRepository.save(cartItem);
 
-        List<Acessory> chosenAccessories = acessoryRepository.findAllById(request.getAccessoryIds());
+                updateCartTotal(cart);
+                cartRepository.save(cart);
 
-        double finalPrice = calculatePrice(carToAdd, chosenAccessories);
-
-        CartItem cartItem = new CartItem();
-        cartItem.setCart(cart);
-        cartItem.setCar(carToAdd);
-        cartItem.setChosenAccessories(chosenAccessories);
-        cartItem.setCalculatedPrice(finalPrice);
-
-        cart.getItems().add(cartItem);
-        updateCartTotal(cart);
-        cartRepository.save(cart);
-        return cartItem;
+                return cartItem;
+            } catch (PersistenceException e) {
+                if (e.getMessage().contains("Deadlock")) {
+                    attempts++;
+                    try { Thread.sleep(50); } catch (InterruptedException ignored) {}
+                } else {
+                    throw e;
+                }
+            }
+        }
+        throw new RuntimeException("Could not add item due to deadlock after 3 attempts");
     }
+
+
     @Transactional
     public void clearCart(User user) {
         Cart cart = getCart(user);
         if (cart != null && cart.getItems() != null && !cart.getItems().isEmpty()) {
-            //cart.getItems().clear(); // teste pra deadlock: Hibernate remove automaticamente o restante
-            cartItemRepository.deleteAll(cart.getItems());
-            cart.getItems().clear();
-            updateCartTotal(cart);
-            cartRepository.save(cart);
+            cart.getItems().clear(); // teste pra deadlock: Hibernate remove automaticamente o restante
+//            cartItemRepository.deleteAll(cart.getItems());
+//            cart.getItems().clear();
+//            updateCartTotal(cart);
+//            cartRepository.save(cart);
         }
     }
 
