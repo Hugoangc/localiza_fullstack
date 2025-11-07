@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.Serializable;
@@ -45,7 +46,10 @@ public class User implements Serializable, UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        if (this.role == null || this.role.trim().isEmpty()) {
+            return List.of();
+        }
+        return List.of(new SimpleGrantedAuthority(this.role));
     }
 
     @Override
