@@ -9,6 +9,11 @@ import com.practice.localiza.repository.CartRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
+import com.practice.localiza.dto.CartItemRequestDTO;
+import com.practice.localiza.repository.AcessoryRepository;
+import com.practice.localiza.repository.CartItemRepository;
+
+import java.util.List;
 
 @Service
 public class CartService {
@@ -19,9 +24,11 @@ public class CartService {
     @Autowired
     private CarRepository carRepository;
 
+    @Autowired
+    private AcessoryRepository acessoryRepository;
 
     @Autowired
-    private CartItemRepository cartItemRepository; //
+    private CartItemRepository cartItemRepository;
 
     @Transactional
     public Cart getCart(User user) {
@@ -35,21 +42,20 @@ public class CartService {
 
 
     @Transactional
-    public CartItem addToCart(User User, Long carId) {
-        Cart cart = getCart(User);
+    public CartItem addToCart(User user, CartItemRequestDTO request) {
+        Cart cart = getCart(user);
 
-        Car carToAdd = carRepository.findById(carId)
-                .orElseThrow(() -> new ResourceNotFoundException("Car", carId));
+        Car carToAdd = carRepository.findById(request.getCarId())
+                .orElseThrow(() -> new ResourceNotFoundException("Car", request.getCarId()));
 
-        double finalPrice = carToAdd.getPrice();
+        List<Acessory> chosenAccessories = acessoryRepository.findAllById(request.getAccessoryIds());
 
-        double multiplier = carToAdd.getAccMultiplier();
-        for (Acessory acessory : carToAdd.getAcessories()) {
-            finalPrice += (acessory.getPrice() * multiplier);
-        }
+        double finalPrice = calculatePrice(carToAdd, chosenAccessories);
+
         CartItem cartItem = new CartItem();
         cartItem.setCart(cart);
         cartItem.setCar(carToAdd);
+        cartItem.setChosenAccessories(chosenAccessories);
         cartItem.setCalculatedPrice(finalPrice);
 
         cart.getItems().add(cartItem);
@@ -58,21 +64,12 @@ public class CartService {
         return cartItem;
     }
     @Transactional
-    public void clearCart(User user) { // <-- Mude de (Long userId) para (User user)
-        // Agora esta linha funciona perfeitamente, pois o 'user' foi recebido
+    public void clearCart(User user) {
         Cart cart = getCart(user);
-
         if (cart != null && cart.getItems() != null && !cart.getItems().isEmpty()) {
-            // Deletar os itens do repositório
             cartItemRepository.deleteAll(cart.getItems());
-
-            // Limpar a lista na entidade Cart
             cart.getItems().clear();
-
-            // Atualizar o total (deve ir para 0)
             updateCartTotal(cart);
-
-            // Salvar o carrinho agora vazio
             cartRepository.save(cart);
         }
     }
@@ -80,15 +77,50 @@ public class CartService {
     @Transactional
     public void removeFromCart(User user, Long cartItemId) {
         Cart cart = getCart(user);
+
         cart.getItems().removeIf(item -> item.getId().equals(cartItemId));
+        cartItemRepository.deleteById(cartItemId);
+
         updateCartTotal(cart);
         cartRepository.save(cart);
     }
 
+    @Transactional
+    public CartItem updateCartItemAccessories(User user, Long cartItemId, CartItemRequestDTO request) {
+        Cart cart = getCart(user);
+        CartItem cartItem = cartItemRepository.findById(cartItemId)
+                .orElseThrow(() -> new ResourceNotFoundException("CartItem", cartItemId));
+
+        if (!cartItem.getCart().getId().equals(cart.getId())) {
+            throw new SecurityException("Este item não pertence ao seu carrinho.");
+        }
+
+        List<Acessory> newAccessories = acessoryRepository.findAllById(request.getAccessoryIds());
+        Car car = cartItem.getCar();
+        double finalPrice = calculatePrice(car, newAccessories);
+        cartItem.setChosenAccessories(newAccessories);
+        cartItem.setCalculatedPrice(finalPrice);
+        cartItemRepository.save(cartItem);
+        updateCartTotal(cart);
+        cartRepository.save(cart);
+
+        return cartItem;
+    }
     private void updateCartTotal(Cart cart) {
-        double total = cart.getItems().stream()
+        Double total = cart.getItems().stream()
                 .mapToDouble(CartItem::getCalculatedPrice)
                 .sum();
         cart.setTotalPrice(total);
     }
+
+    private Double calculatePrice(Car car, List<Acessory> chosenAccessories) {
+        double finalPrice = car.getPrice();
+        double multiplier = car.getAccMultiplier(); //
+
+        for (Acessory acessory : chosenAccessories) {
+            finalPrice += (acessory.getPrice() * multiplier);
+        }
+        return finalPrice;
+    }
+
 }

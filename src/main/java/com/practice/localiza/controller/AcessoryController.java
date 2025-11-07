@@ -39,7 +39,7 @@ public class AcessoryController {
     }
 
     @GetMapping("/findById/{id}")
-    public ResponseEntity<?> findById(@PathVariable("id") long id){
+    public ResponseEntity<?> findById(@PathVariable("id") Long id){
         try {
             Acessory acessory = this.acessoryService.findById(id);
             return new ResponseEntity<>(acessory, HttpStatus.OK);
@@ -51,7 +51,7 @@ public class AcessoryController {
     }
 
     @DeleteMapping("/deleteById/{id}")
-    public ResponseEntity<String> deleteById(@PathVariable("id") long id){
+    public ResponseEntity<String> deleteById(@PathVariable("id") Long id){
         String mensage = this.acessoryService.deleteById(id);
         return new ResponseEntity<>(mensage, HttpStatus.OK);
     }
@@ -67,7 +67,7 @@ public class AcessoryController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<String> update(@RequestBody Acessory acessory, @PathVariable("id") long id){
+    public ResponseEntity<String> update(@RequestBody Acessory acessory, @PathVariable("id") Long id){
         String mensage = this.acessoryService.update(acessory, id);
         return new ResponseEntity<>(mensage, HttpStatus.OK);
     }

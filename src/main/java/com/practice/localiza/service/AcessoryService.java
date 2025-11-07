@@ -24,7 +24,7 @@ public class AcessoryService {
         return this.acessoryRepository.findAll(config);
     }
 
-    public Acessory findById(long id) {
+    public Acessory findById(Long id) {
         return this.acessoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Accessory", id));
     }
@@ -37,15 +37,16 @@ public class AcessoryService {
         return this.acessoryRepository.save(acessory);
     }
 
-    public String update(Acessory acessory, long id) {
+    public String update(Acessory acessory, Long id) {
         Acessory existingAcessory = this.findById(id);
         existingAcessory.setName(acessory.getName());
         existingAcessory.setDescription(acessory.getDescription());
+        existingAcessory.setPrice(acessory.getPrice());
         this.acessoryRepository.save(existingAcessory);
         return "Acessory updated successfully";
     }
 
-    public String deleteById(long id) {
+    public String deleteById(Long id) {
         this.acessoryRepository.deleteById(id);
         return "Acessory deleted successfully";
     }

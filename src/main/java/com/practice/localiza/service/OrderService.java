@@ -46,19 +46,34 @@ public class OrderService {
         order.setStatus(OrderStatus.PAID);
 
         // 4. Converter CartItems em OrderItems
+//        List<OrderItem> orderItems = new ArrayList<>();
+//        for (CartItem cartItem : cart.getItems()) {
+//            OrderItem orderItem = new OrderItem();
+//            orderItem.setOrder(order);
+//            orderItem.setQuantity(1);
+//
+//            // copy car name
+//            orderItem.setCarId(cartItem.getCar().getId());
+//            orderItem.setCarName(cartItem.getCar().getName());
+//            orderItem.setPurchasedPrice(cartItem.getCalculatedPrice());
+//
+//            // acc names
+//            List<String> accessoryNames = cartItem.getCar().getAcessories()
+//                    .stream()
+//                    .map(Acessory::getName)
+//                    .collect(Collectors.toList());
+//            orderItem.setPurchasedAccessories(accessoryNames);
         List<OrderItem> orderItems = new ArrayList<>();
         for (CartItem cartItem : cart.getItems()) {
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(order);
             orderItem.setQuantity(1);
 
-            // copy car name
             orderItem.setCarId(cartItem.getCar().getId());
             orderItem.setCarName(cartItem.getCar().getName());
             orderItem.setPurchasedPrice(cartItem.getCalculatedPrice());
 
-            // acc names
-            List<String> accessoryNames = cartItem.getCar().getAcessories()
+            List<String> accessoryNames = cartItem.getChosenAccessories()
                     .stream()
                     .map(Acessory::getName)
                     .collect(Collectors.toList());

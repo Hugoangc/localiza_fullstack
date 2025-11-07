@@ -33,14 +33,14 @@ public class CarService {
         return this.carRepository.findByYearGte(manufactureYear);
     }
 
-//    public List<Car> findByBrand(long brandId) {
+//    public List<Car> findByBrand(Long brandId) {
 //        Brand brand = new Brand();
 //        brand.setId(brandId);
 //        return carRepository.findByBrand(brand);
 //    }
 
 
-    public List<Car> findByBrand(long brandId) {
+    public List<Car> findByBrand(Long brandId) {
         return carRepository.findByBrandId(brandId);
     }
     public List<Car> findAll() {

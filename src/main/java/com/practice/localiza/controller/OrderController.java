@@ -26,7 +26,7 @@ public class OrderController {
             Order order = orderService.createOrder(user, paymentDetails);
             return ResponseEntity.ok(order);
         } catch (RuntimeException e) {
-            // Você pode usar seu GlobalExceptionHandler aqui
+            //  TODO: usar seu GlobalExceptionHandler aqui
             return ResponseEntity.badRequest().body(null);
         }
     }

@@ -23,18 +23,19 @@ public class Acessory implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
     @NotBlank
     private String name;
     private String description;
-    private double price;
+    private Double price;
 
 
     @Override
     public boolean equals(Object o) {
+        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Acessory acessory = (Acessory) o;
-        return id == acessory.id;
+        return Objects.equals(id, acessory.id);
     }
 
     @Override

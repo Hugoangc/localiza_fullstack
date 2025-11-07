@@ -27,7 +27,6 @@ public class LoginService {
                             login.getPassword()
                     )
             );
-            // v-- 2. CORREÇÃO AQUI --v
             User user = repository.findByUsername(login.getUsername()).get();
             String jwtToken = jwtService.generateToken(user);
             return jwtToken;

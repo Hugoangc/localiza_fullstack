@@ -1,5 +1,5 @@
 package com.practice.localiza.controller;
-
+import com.practice.localiza.dto.CartItemRequestDTO;
 import com.practice.localiza.entity.Cart;
 import com.practice.localiza.entity.CartItem;
 import com.practice.localiza.entity.User;
@@ -23,13 +23,22 @@ public class CartController {
         return ResponseEntity.ok(cart);
     }
 
-    @PostMapping("/add/{carId}")
+    @PostMapping("/add")
     public ResponseEntity<CartItem> addToCart(
             @AuthenticationPrincipal User user,
-            @PathVariable Long carId) {
+            @RequestBody CartItemRequestDTO request) {
 
-        CartItem item = cartService.addToCart(user, carId);
+        CartItem item = cartService.addToCart(user, request);
         return ResponseEntity.ok(item);
+    }
+    @PutMapping("/item/{cartItemId}")
+    public ResponseEntity<CartItem> updateCartItem(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long cartItemId,
+            @RequestBody CartItemRequestDTO request) {
+
+        CartItem updatedItem = cartService.updateCartItemAccessories(user, cartItemId, request);
+        return ResponseEntity.ok(updatedItem);
     }
 
 

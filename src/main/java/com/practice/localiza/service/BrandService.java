@@ -2,6 +2,7 @@ package com.practice.localiza.service;
 
 import com.practice.localiza.entity.Brand;
 import com.practice.localiza.entity.Car;
+import com.practice.localiza.exception.ResourceNotFoundException;
 import com.practice.localiza.repository.BrandRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +21,9 @@ public class BrandService {
         return this.brandRepository.findAll();
     }
 
-    public Brand findById(long id) {
-        return this.brandRepository.findById(id).get();
+    public Brand findById(Long id) {
+        return this.brandRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Brand", id));
     }
 
     public List<Brand> findByName(String name) {
@@ -37,7 +39,7 @@ public class BrandService {
         existingBrand.setName(brand.getName());
         return this.brandRepository.save(existingBrand); }
 
-    public void deleteById(long id) {
+    public void deleteById(Long id) {
         this.brandRepository.deleteById(id);
     }
 

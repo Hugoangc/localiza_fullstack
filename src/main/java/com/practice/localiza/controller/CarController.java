@@ -40,6 +40,7 @@ public class CarController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
+
     @GetMapping("/findAll")
     public ResponseEntity<List<Car>> findAll() {
         try {
