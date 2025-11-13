@@ -2,6 +2,7 @@ package com.practice.localiza.service;
 
 import com.practice.localiza.entity.*;
 import com.practice.localiza.entity.User;
+import com.practice.localiza.exception.DeadlockException;
 import com.practice.localiza.exception.ResourceNotFoundException;
 import com.practice.localiza.repository.CarRepository;
 import com.practice.localiza.repository.CartItemRepository;
@@ -60,7 +61,6 @@ public class CartService {
                 cartItem.setCar(carToAdd);
                 cartItem.setChosenAccessories(chosenAccessories);
                 cartItem.setCalculatedPrice(finalPrice);
-
                 cartItemRepository.save(cartItem);
 
                 updateCartTotal(cart);
@@ -76,31 +76,45 @@ public class CartService {
                 }
             }
         }
-        throw new RuntimeException("Could not add item due to deadlock after 3 attempts");
+        throw new DeadlockException("Deadlock detected after multiple attempts", null);
     }
 
 
     @Transactional
     public void removeFromCart(User user, Long cartItemId) {
-        Cart cart = getCart(user);
-
-        cart.getItems().removeIf(item -> item.getId().equals(cartItemId));
-        cartItemRepository.deleteById(cartItemId);
-
-        updateCartTotal(cart);
-        cartRepository.save(cart);
+        try {
+            Cart cart = getCart(user);
+            cart.getItems().removeIf(item -> item.getId().equals(cartItemId));
+            cartItemRepository.deleteById(cartItemId);
+            updateCartTotal(cart);
+            cartRepository.save(cart);
+        } catch (PersistenceException e) {
+            if (e.getMessage() != null && e.getMessage().toLowerCase().contains("deadlock")) {
+                throw new DeadlockException("Deadlock while removing item", e);
+            } else {
+                throw e;
+            }
+        }
     }
 
     @Transactional
     public void clearCart(User user) {
-        Cart cart = getCart(user);
-        if (cart != null && cart.getItems() != null && !cart.getItems().isEmpty()) {
-            Long cartId = cart.getId();
-            cart = cartRepository.findById(cartId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Cart", cartId));
-            cart.getItems().clear();
-            updateCartTotal(cart);
-            cartRepository.save(cart);
+        try {
+            Cart cart = getCart(user);
+            if (cart != null && cart.getItems() != null && !cart.getItems().isEmpty()) {
+                Long cartId = cart.getId();
+                cart = cartRepository.findById(cartId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Cart", cartId));
+                cart.getItems().clear();
+                updateCartTotal(cart);
+                cartRepository.save(cart);
+            }
+        } catch (PersistenceException e) {
+            if (e.getMessage() != null && e.getMessage().toLowerCase().contains("deadlock")) {
+                throw new DeadlockException("Deadlock while clearing cart", e);
+            } else {
+                throw e;
+            }
         }
     }
 
